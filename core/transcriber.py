@@ -87,11 +87,11 @@ def transcribe(source : str, language: str = "english"):
     return transcript
 
 
-def save_to_dir(transcript : str):
+def save_to_dir(transcript: str):
     TRANSCRIPT_DIR = "data/transcripts"
     os.makedirs(TRANSCRIPT_DIR, exist_ok=True)
     transcript_path = os.path.join(TRANSCRIPT_DIR, "transcript.txt")
-    with open(transcript_path, "w") as f:
+    with open(transcript_path, "w", encoding="utf-8") as f:
         f.write(transcript)
     print(f"Transcript saved to {transcript_path}")
-    return transcript_path 
+    return transcript_path

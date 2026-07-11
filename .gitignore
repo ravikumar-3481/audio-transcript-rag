@@ -36,7 +36,7 @@ dist/
 
 # Audio downloads and large data files
 data/downloads/
-data/transcript/
+data/transcripts/
 
 # IDE/project-specific files
 *.iml
