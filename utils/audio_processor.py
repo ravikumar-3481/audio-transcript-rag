@@ -76,9 +76,9 @@ def fix_audio_format(input_path: str) -> str:
     audio.export(output_path, format='wav')
     return output_path
 
-def chunk_audio(wav_path : str, chunk_minutes : int = 10) -> list:
+def chunk_audio(wav_path : str, chunk_seconds : int = 25) -> list:
     audio = AudioSegment.from_wav(wav_path)
-    chunk_length_ms = chunk_minutes * 60 * 1000
+    chunk_length_ms = chunk_seconds * 1000
     chunks = []
 
     for i, start in enumerate(range(0, len(audio), chunk_length_ms)):
@@ -94,7 +94,6 @@ def process_audio(url : str, language: str = "english") -> list :
         print("Downloading audio...", "\n")
         wav_path = download_youtube_audio(url)
         print("Audio Download Complete...", "\n", "Fixing Audio Format.....")
-        print( "\n")
         wav = fix_audio_format(wav_path)
         os.remove(wav_path)
         print("Original Audio File Has Been Removed...", "\n")
@@ -104,9 +103,8 @@ def process_audio(url : str, language: str = "english") -> list :
         wav_path = fix_audio_format(url)
 
     print("Chunking Audio...", "\n")
-    if language.lower() == "hinglish":
-        chunks = chunk_audio(wav_path)
-    chunks = chunk_audio(wav_path)
+    chunk_seconds = 25 if language.lower() == "hinglish" else 600
+    chunks = chunk_audio(wav_path, chunk_seconds)
     print(f"Audio ready -- {len(chunks)} Chunks Created", "\n")
     os.remove(wav_path)
     return chunks

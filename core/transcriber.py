@@ -4,11 +4,13 @@ from dotenv import load_dotenv
 import requests
 import os
 
+load_dotenv()
+
 SARVAM_API_KEY = os.getenv("SARVAM_API_KEY")
 SARVAM_STT_TRANSLATE_URL = "https://api.sarvam.ai/speech-to-text-translate"
 SARVAM_MODEL = "saaras:v2.5"
 
-load_dotenv()
+
 
 _client = None
 
@@ -37,27 +39,25 @@ def transcribe_chunk_deepgram(chunk_path : str, translate : bool = False) -> str
 
 
 
-def transcribe_chunk_sarvam(chunk_path : str) -> str:
+def transcribe_chunk_sarvam(chunk_path: str) -> str:
     if not SARVAM_API_KEY:
         print("SARVAM_API_KEY is not set\nShifting To Deepgram")
-        transcript = transcribe_chunk_deepgram(chunk_path)
+        return transcribe_chunk_deepgram(chunk_path)  # added return
 
     headers = {"api-subscription-key": SARVAM_API_KEY}
     data = {"model": SARVAM_MODEL, "with_diarization": "false"}
     with open(chunk_path, "rb") as audio:
-        files = {"file" : (os.path.basename(chunk_path), audio, "audio/wav")}
+        files = {"file": (os.path.basename(chunk_path), audio, "audio/wav")}
         response = requests.post(
             SARVAM_STT_TRANSLATE_URL,
-            headers=headers, 
-            files=files, 
+            headers=headers,
+            files=files,
             data=data,
             timeout=300,
         )
 
     response.raise_for_status()
-    transcript = response.json().get("transcript", "")
-    
-    return transcript
+    return response.json().get("transcript", "")
 
 
 
