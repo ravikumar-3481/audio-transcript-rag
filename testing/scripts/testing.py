@@ -23,6 +23,15 @@ def load_transcript_from_file() -> str:
 
 def summarize():
     transcript = load_transcript_from_file()
-    summary, title = summarizer(transcript)
+    if not transcript:
+        raise ValueError("No transcript to summarize")
+    
+    try:
+        summary, title = summarizer(transcript)
+        
+    except Exception as e:
+        print(f"Failed to summarize transcript: {e}")
+        raise
+
     save_to_dir(summary, DIRECTORY = "testing/summary", filename = (title + ".txt"))
     
