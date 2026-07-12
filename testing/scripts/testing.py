@@ -1,5 +1,6 @@
 from utils.text_process import clean_text
 from utils.tools import save_to_dir
+from core.summary import summarizer
 import os
 
 def load_transcript_from_file() -> str:
@@ -20,7 +21,8 @@ def load_transcript_from_file() -> str:
         raise
 
 
-
-
-text = load_transcript_from_file()
-save_to_dir(text, DIRECTORY = "testing/transcripts", filename = "process(testing).txt")
+def summarize():
+    transcript = load_transcript_from_file()
+    summary, title = summarizer(transcript)
+    save_to_dir(summary, DIRECTORY = "testing/summary", filename = (title + ".txt"))
+    

@@ -35,8 +35,7 @@ dist/
 *.db
 
 # Audio downloads and large data files
-data/downloads/
-data/transcripts/
+data/
 
 # IDE/project-specific files
 *.iml
@@ -59,4 +58,8 @@ htmlcov/
 # Jupyter
 .ipynb_checkpoints/
 
+# Other 
 testing/transcripts/
+testing/summary/
+
+testt.py
