@@ -6,6 +6,33 @@ import re
 TRANSCRIPT_DIR = "data/transcripts"
 
 
+
+def clean_text(text : str) -> str:
+    try:
+        cleaned = remove_punctuation_symbols(text)
+        cleaned = re.sub(r"\[.*?\]", "", cleaned)
+        cleaned = re.sub(r"\s+", " ", cleaned)
+        cleaned = cleaned.strip()
+        return cleaned if cleaned else text
+    except Exception as e:
+        print(f"Text cleaning failed, using raw text: {e}")
+        return text
+
+
+def remove_punctuation_symbols(text : str) -> str:
+    try:
+        if not text:
+            return ""
+        cleaned = re.sub(r"[^\w\s]", "", text, flags=re.UNICODE)
+        cleaned = re.sub(r"_", "", cleaned)
+        cleaned = re.sub(r"\s+", " ", cleaned).strip()
+        return cleaned if cleaned else text
+    except Exception as e:
+        print(f"Punctuation removal failed, using raw text: {e}")
+        return text
+    
+
+
 def load_transcript_from_file(transcript_path : str = None) -> str:
     path = transcript_path or os.path.join(TRANSCRIPT_DIR, "transcript.txt")
     try:
@@ -33,36 +60,15 @@ def get_transcript(transcript_path : str = None, source : str = None, language :
         raise ValueError("No transcript file available and no source provided for transcription")
  
     try:
-        return transcribe(source, language=language)
+        transcript = transcribe(source, language=language)
+        return transcript
     except Exception as e:
         print(f"Failed to generate transcript from source {source}: {e}")
         raise
 
 
 
-def clean_text(text : str) -> str:
-    try:
-        cleaned = remove_punctuation_symbols(text)
-        cleaned = re.sub(r"\[.*?\]", "", cleaned)
-        cleaned = re.sub(r"\s+", " ", cleaned)
-        cleaned = cleaned.strip()
-        return cleaned if cleaned else text
-    except Exception as e:
-        print(f"Text cleaning failed, using raw text: {e}")
-        return text
 
-
-def remove_punctuation_symbols(text : str) -> str:
-    try:
-        if not text:
-            return ""
-        cleaned = re.sub(r"[^\w\s]", "", text, flags=re.UNICODE)
-        cleaned = re.sub(r"_", "", cleaned)
-        cleaned = re.sub(r"\s+", " ", cleaned).strip()
-        return cleaned if cleaned else text
-    except Exception as e:
-        print(f"Punctuation removal failed, using raw text: {e}")
-        return text
 
 
 

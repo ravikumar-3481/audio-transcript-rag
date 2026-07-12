@@ -134,27 +134,6 @@ def transcribe(source : str, language: str = "english"):
         raise 
 
     transcript = transcribe_all(chunks, language=language)
-
-    try:
-        save_to_dir(transcript)
-    except Exception as e:
-        print(f"Warning: could not save transcript to disk: {e}")
-
     return transcript
 
 
-def save_to_dir(transcript : str):
-    TRANSCRIPT_DIR = "data/transcripts"
-    try:
-        os.makedirs(TRANSCRIPT_DIR, exist_ok=True)
-        transcript_path = os.path.join(TRANSCRIPT_DIR, "transcript.txt")
-        with open(transcript_path, "w") as f:
-            f.write(transcript)
-        print(f"Transcript saved to {transcript_path}")
-        return transcript_path
-    except OSError as e:
-        print(f"Failed to save transcript: {e}")
-        raise
-    except Exception as e:
-        print(f"Unexpected error saving transcript: {e}")
-        raise
