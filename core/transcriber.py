@@ -2,6 +2,7 @@ from deepgram import DeepgramClient
 from utils.audio_processor import process_audio
 from dotenv import load_dotenv
 import requests
+import json
 import os
 
 load_dotenv()
@@ -10,21 +11,34 @@ SARVAM_API_KEY = os.getenv("SARVAM_API_KEY")
 SARVAM_STT_TRANSLATE_URL = "https://api.sarvam.ai/speech-to-text-translate"
 SARVAM_MODEL = "saaras:v2.5"
 
-
-
 _client = None
 
 def get_client():
     global _client
     if _client is None:
-        api_key = os.getenv("DEEPGRAM_API_KEY")
-        _client = DeepgramClient(api_key=api_key)
+        try:
+            api_key = os.getenv("DEEPGRAM_API_KEY")
+            if not api_key:
+                raise ValueError("DEEPGRAM_API_KEY is not set")
+            _client = DeepgramClient(api_key=api_key)
+        except Exception as e:
+            print(f"Failed to initialize Deepgram client: {e}")
+            raise
     return _client
 
 def transcribe_chunk_deepgram(chunk_path : str, translate : bool = False) -> str:
-    client = get_client()
-    with open(chunk_path, "rb") as audio:
-        buffer_data = audio.read()
+    try:
+        client = get_client()
+    except Exception as e:
+        print(f"Deepgram client unavailable: {e}")
+        return ""
+
+    try:
+        with open(chunk_path, "rb") as audio:
+            buffer_data = audio.read()
+    except (FileNotFoundError, OSError) as e:
+        print(f"Could not read audio chunk {chunk_path}: {e}")
+        return ""
 
     kwargs = {
         "model": "nova-3",
@@ -32,39 +46,67 @@ def transcribe_chunk_deepgram(chunk_path : str, translate : bool = False) -> str
     }
 
     if translate:
-        kwargs["detect_language"] = True  # see note below re: translation
+        kwargs["detect_language"] = True
 
-    response = client.listen.v1.media.transcribe_file(request=buffer_data, **kwargs)
-    return response.results.channels[0].alternatives[0].transcript
+    try:
+        response = client.listen.v1.media.transcribe_file(request=buffer_data, **kwargs)
+        return response.results.channels[0].alternatives[0].transcript
+    except (AttributeError, IndexError, KeyError) as e:
+        print(f"Unexpected Deepgram response format for {chunk_path}: {e}")
+        return ""
+    except Exception as e:
+        print(f"Deepgram transcription failed for {chunk_path}: {e}")
+        return ""
 
 
 
-def transcribe_chunk_sarvam(chunk_path: str) -> str:
+def transcribe_chunk_sarvam(chunk_path : str) -> str:
     if not SARVAM_API_KEY:
         print("SARVAM_API_KEY is not set\nShifting To Deepgram")
-        return transcribe_chunk_deepgram(chunk_path)  # added return
+        return transcribe_chunk_deepgram(chunk_path)
 
     headers = {"api-subscription-key": SARVAM_API_KEY}
     data = {"model": SARVAM_MODEL, "with_diarization": "false"}
-    with open(chunk_path, "rb") as audio:
-        files = {"file": (os.path.basename(chunk_path), audio, "audio/wav")}
-        response = requests.post(
-            SARVAM_STT_TRANSLATE_URL,
-            headers=headers,
-            files=files,
-            data=data,
-            timeout=300,
-        )
 
-    response.raise_for_status()
-    return response.json().get("transcript", "")
+    try:
+        with open(chunk_path, "rb") as audio:
+            files = {"file" : (os.path.basename(chunk_path), audio, "audio/wav")}
+            response = requests.post(
+                SARVAM_STT_TRANSLATE_URL,
+                headers=headers,
+                files=files,
+                data=data,
+                timeout=300,
+            )
+        response.raise_for_status()
+    except (FileNotFoundError, OSError) as e:
+        print(f"Could not read audio chunk {chunk_path}: {e}")
+        return ""
+    except requests.exceptions.Timeout:
+        print(f"Sarvam request timed out for {chunk_path}")
+        return ""
+    except requests.exceptions.RequestException as e:
+        print(f"Sarvam request failed for {chunk_path}: {e}")
+        return ""
+
+    try:
+        transcript = response.json().get("transcript", "")
+    except (json.JSONDecodeError, ValueError, AttributeError) as e:
+        print(f"Could not parse Sarvam response for {chunk_path}: {e}")
+        return ""
+
+    return transcript
 
 
 
 def transcribe_chunk(chunk_path : str, language: str = "english") -> str:
-    if language.lower() =="hinglish":
-        return transcribe_chunk_sarvam(chunk_path)
-    return transcribe_chunk_deepgram(chunk_path)
+    try:
+        if language.lower() =="hinglish":
+            return transcribe_chunk_sarvam(chunk_path)
+        return transcribe_chunk_deepgram(chunk_path)
+    except Exception as e:
+        print(f"Unexpected error transcribing chunk {chunk_path}: {e}")
+        return ""
 
 
 def transcribe_all(chunks : list, language: str = "english") -> str:
@@ -74,24 +116,45 @@ def transcribe_all(chunks : list, language: str = "english") -> str:
 
     for i , chunk in enumerate(chunks):
         print(f'Transcribing Chunk {i + 1}/{len(chunks)}...')
-        text = transcribe_chunk(chunk, language=language)
+        try:
+            text = transcribe_chunk(chunk, language=language)
+        except Exception as e:
+            print(f"Skipping chunk {chunk} due to error: {e}")
+            text = ""
         full_transcribe += text + "\n"
         print("Transcription Complete...", "\n")
     return full_transcribe
 
 
 def transcribe(source : str, language: str = "english"):
-    chunks = process_audio(source, language=language)
+    try:
+        chunks = process_audio(source, language=language)
+    except Exception as e:
+        print(f"Audio processing failed for {source}: {e}")
+        raise 
+
     transcript = transcribe_all(chunks, language=language)
-    save_to_dir(transcript)
+
+    try:
+        save_to_dir(transcript)
+    except Exception as e:
+        print(f"Warning: could not save transcript to disk: {e}")
+
     return transcript
 
 
-def save_to_dir(transcript: str):
+def save_to_dir(transcript : str):
     TRANSCRIPT_DIR = "data/transcripts"
-    os.makedirs(TRANSCRIPT_DIR, exist_ok=True)
-    transcript_path = os.path.join(TRANSCRIPT_DIR, "transcript.txt")
-    with open(transcript_path, "w", encoding="utf-8") as f:
-        f.write(transcript)
-    print(f"Transcript saved to {transcript_path}")
-    return transcript_path
+    try:
+        os.makedirs(TRANSCRIPT_DIR, exist_ok=True)
+        transcript_path = os.path.join(TRANSCRIPT_DIR, "transcript.txt")
+        with open(transcript_path, "w") as f:
+            f.write(transcript)
+        print(f"Transcript saved to {transcript_path}")
+        return transcript_path
+    except OSError as e:
+        print(f"Failed to save transcript: {e}")
+        raise
+    except Exception as e:
+        print(f"Unexpected error saving transcript: {e}")
+        raise
