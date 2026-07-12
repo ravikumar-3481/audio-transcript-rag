@@ -1,10 +1,6 @@
-import os
 from core.transcriber import transcribe
-import shutil
+from utils.tools import save_to_dir
 import re
-
-TRANSCRIPT_DIR = "data/transcripts"
-
 
 
 def clean_text(text : str) -> str:
@@ -32,32 +28,9 @@ def remove_punctuation_symbols(text : str) -> str:
         return text
     
 
-
-def load_transcript_from_file(transcript_path : str = None) -> str:
-    path = transcript_path or os.path.join(TRANSCRIPT_DIR, "transcript.txt")
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            transcript = f.read()
-        if not transcript.strip():
-            raise ValueError(f"Transcript file {path} is empty")
-        return transcript
-    except FileNotFoundError:
-        print(f"Transcript file not found at {path}")
-        raise
-    except (OSError, ValueError) as e:
-        print(f"Could not read transcript file {path}: {e}")
-        raise
-
-
-def get_transcript(transcript_path : str = None, source : str = None, language : str = "english", use_file : bool = True) -> str:
-    if use_file:
-        try:
-            return load_transcript_from_file(transcript_path)
-        except Exception as e:
-            print(f"Falling back to live transcription due to: {e}")
- 
+def get_transcript(source : str = None, language : str = "english") -> str:
     if not source:
-        raise ValueError("No transcript file available and no source provided for transcription")
+        raise ValueError("No Source Has Provided. Try Again...")
  
     try:
         transcript = transcribe(source, language=language)
@@ -67,15 +40,9 @@ def get_transcript(transcript_path : str = None, source : str = None, language :
         raise
 
 
-
-
-
-
-
-
-def process_transcript(transcript_path : str = None, source : str = None, language : str = "english", use_file : bool = True) -> str:
+def process_transcript(source : str = None, language : str = "english") -> str:
     try:
-        raw_transcript = get_transcript(transcript_path=transcript_path, source=source, language=language, use_file=use_file)
+        raw_transcript = get_transcript(source=source, language=language)
     except Exception as e:
         print(f"Could not obtain a transcript: {e}")
         raise
@@ -86,6 +53,6 @@ def process_transcript(transcript_path : str = None, source : str = None, langua
         raise ValueError("Cleaned transcript is empty, nothing to process")
 
     print(f"Transcript processed successfully ({len(cleaned)} characters)")
-
+    save_to_dir(cleaned, DIRECTORY = "data/transcripts", filename = "processed_text.txt")
     return cleaned
 

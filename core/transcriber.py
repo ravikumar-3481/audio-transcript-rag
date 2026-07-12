@@ -1,6 +1,7 @@
 from deepgram import DeepgramClient
 from utils.audio_processor import process_audio
 from dotenv import load_dotenv
+from utils.tools import save_to_dir
 import requests
 import json
 import os
@@ -134,6 +135,6 @@ def transcribe(source : str, language: str = "english"):
         raise 
 
     transcript = transcribe_all(chunks, language=language)
+    save_to_dir(transcript, DIRECTORY = "data/transcripts", filename = "transcript.txt")
     return transcript
-
 

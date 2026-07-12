@@ -59,4 +59,4 @@ htmlcov/
 # Jupyter
 .ipynb_checkpoints/
 
-process.txt
+testing/
