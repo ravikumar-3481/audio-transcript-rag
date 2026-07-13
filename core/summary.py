@@ -3,6 +3,8 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from agent.llm import get_llm
 from agent.system.prompts import summary_prompt, title_prompt, study_notes_prompt
+from utils.text_process import get_transcript
+from utils.tools import save_to_json
 from core.chunking import chunk_transcript
 
 
@@ -93,3 +95,21 @@ def summarizer(transcript : str, purpose : str = "summarize") -> str:
     except (ModuleNotFoundError, RuntimeError, TypeError, ValueError) as e:
         raise RuntimeError(f"Failed to summarize transcript: {e}") from e
     
+def summarize(source : str, language : str = "english", purpose : str = "summarize"):
+    transcript = get_transcript(source , language=language)
+    if not transcript:
+        raise ValueError("No transcript to summarize")
+    
+    try:
+        summary, title = summarizer(transcript, purpose=purpose)
+        
+    except Exception as e:
+        print(f"Failed to summarize transcript: {e}")
+        raise
+    
+    if purpose == "notes":
+        save_to_json(summary, purpose=purpose)
+    else:
+        save_to_json(summary, purpose=purpose)
+    
+    return summary, title

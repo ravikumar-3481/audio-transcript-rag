@@ -3,15 +3,7 @@ import json
 import shutil
 
 
-def clear_dir():
-    password = str(input("Enter password to Delete Directory:  "))
-    if password == "Ravi09":
-        shutil.rmtree("data", ignore_errors=True)
-        shutil.rmtree("testing/transcripts", ignore_errors=True)
-        shutil.rmtree("testing/summary", ignore_errors=True)
-        shutil.rmtree("testing/notes", ignore_errors=True)
-    else:
-        print("Incorrect Password")
+
 
 def remove_a_dir(DIRECTORY : str = None):
     if not DIRECTORY:
@@ -35,6 +27,47 @@ def save_to_dir(data : str, DIRECTORY : str, filename : str = "untitled.txt") ->
     except OSError as e:
         print(f"Failed to save transcript: {e}")
         raise
+
+def save_to_json(summary : str, DIRECTORY : str = "agent/memory/data", filename : str = "summary.json", purpose : str = "summarize") -> str:
+
+    if not summary:
+        raise ValueError("No transcript provided, nothing to summarize")
+
+    try:
+        raw_summary = summary 
+    except (ModuleNotFoundError, RuntimeError, TypeError, ValueError) as e:
+        print(f"Failed to generate summary: {e}")
+        raise
+
+    if not raw_summary:
+        raise ValueError("No summary generated, nothing to save")
+
+    try:
+        records = parse_concatenated_json(raw_summary)
+    except ValueError as e:
+        print(f"Failed to parse summary output as JSON: {e}")
+        raise
+
+    if purpose == "notes":
+        merged = merge_notes_records_notes(records)
+        filename = "notes.json"
+    else:
+        merged = merge_notes_records_summary(records)
+
+    try:
+        os.makedirs(DIRECTORY, exist_ok=True)
+        output_path = os.path.join(DIRECTORY, filename)
+        os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(merged, f, ensure_ascii=False, indent=2)
+    except OSError as e:
+        print(f"Failed to save summary json to {output_path}: {e}")
+        raise
+
+    print(f"Summary saved to {output_path}")
+    return output_path 
+
+
 
 
 def parse_concatenated_json(raw : str) -> list:
@@ -137,41 +170,44 @@ def merge_notes_records_summary(records : list) -> dict:
     }
 
 
-def save_to_json(summary : str, DIRECTORY : str = "agent/memory/data", filename : str = "summary.json", purpose : str = "summarize") -> str:
 
-    if not summary:
-        raise ValueError("No transcript provided, nothing to summarize")
 
+def read_json_file(DIRECTORY : str = "agent/memory/data"):
+    for filename in os.listdir(DIRECTORY):
+        if filename.endswith(".json"):
+            input_path = os.path.join(DIRECTORY, filename)
+
+    if not os.path.exists(input_path):
+        raise FileNotFoundError(f"Input file {input_path} not found")
+    
     try:
-        raw_summary = summary 
-    except (ModuleNotFoundError, RuntimeError, TypeError, ValueError) as e:
-        print(f"Failed to generate summary: {e}")
+        with open(input_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return data
+    except (OSError, json.JSONDecodeError) as e:
+        print(f"Failed to read input file {input_path}: {e}")
         raise
 
-    if not raw_summary:
-        raise ValueError("No summary generated, nothing to save")
 
-    try:
-        records = parse_concatenated_json(raw_summary)
-    except ValueError as e:
-        print(f"Failed to parse summary output as JSON: {e}")
-        raise
+def get_data(purpose: str = "summarize") -> str :
+    data = read_json_file()
+    if purpose == "notes" :
+        quick_summary = data.get("quick_summary", "")
+        detailed_explanation = data.get("detailed_explanation", "")
+        key_definitions = {}
+        chunk_definitions = data.get("key_definitions", [])
+        if isinstance(chunk_definitions, list):
+            for items in chunk_definitions:
+                key_definitions[(items["term"])] = (items["definition"])
+        notes = data.get("notes", [])
 
-    if purpose == "notes":
-        merged = merge_notes_records_notes(records)
-        filename = "notes.json"
+        return quick_summary, detailed_explanation, key_definitions, notes
+    
     else:
-        merged = merge_notes_records_summary(records)
-
-    try:
-        os.makedirs(DIRECTORY, exist_ok=True)
-        output_path = os.path.join(DIRECTORY, filename)
-        os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
-        with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(merged, f, ensure_ascii=False, indent=2)
-    except OSError as e:
-        print(f"Failed to save summary json to {output_path}: {e}")
-        raise
-
-    print(f"Summary saved to {output_path}")
-    return output_path 
+        short_summary = data.get("short_summary", "")
+        detailed_summary = data.get("detailed_summary", "")
+        important_notes = data.get("important_notes", [])
+        remember_points = data.get("remember_points", [])
+        important_points = data.get("important_points", [])
+        
+        return short_summary, detailed_summary, important_notes, remember_points, important_points

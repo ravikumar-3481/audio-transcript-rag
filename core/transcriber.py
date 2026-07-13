@@ -136,6 +136,6 @@ def transcribe(source : str, language: str = "english"):
 
     transcript = transcribe_all(chunks, language=language)
     save_to_dir(transcript, DIRECTORY = "data/transcripts", filename = "transcript.txt")
-    remove_a_dir("data/downloads")
+    remove_a_dir(DIRECTORY = "data/downloads")
     return transcript
 

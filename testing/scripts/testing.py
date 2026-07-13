@@ -1,7 +1,19 @@
 from utils.text_process import clean_text
-from utils.tools import save_to_dir, save_to_json
+from utils.tools import save_to_dir, save_to_json, get_data
 from core.summary import summarizer
-import os
+import os, shutil
+
+
+def clear_dir():
+    password = str(input("Enter password to Delete Directory:  "))
+    if password == "Ravi09":
+        shutil.rmtree("data", ignore_errors=True)
+        shutil.rmtree("testing/transcripts", ignore_errors=True)
+        shutil.rmtree("testing/summary", ignore_errors=True)
+        shutil.rmtree("testing/notes", ignore_errors=True)
+    else:
+        print("Incorrect Password")
+
 
 def load_transcript_from_file() -> str:
     DIR ="data/transcripts"

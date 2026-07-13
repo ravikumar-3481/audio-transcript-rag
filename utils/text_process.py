@@ -28,7 +28,7 @@ def remove_punctuation_symbols(text : str) -> str:
         return text
     
 
-def get_transcript(source : str = None, language : str = "english") -> str:
+def get_transcript(source : str , language : str = "english") -> str:
     if not source:
         raise ValueError("No Source Has Provided. Try Again...")
  
