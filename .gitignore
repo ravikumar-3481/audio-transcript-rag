@@ -61,5 +61,6 @@ htmlcov/
 # Other 
 testing/transcripts/
 testing/summary/
+testing/notes/
 
 testt.py

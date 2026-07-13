@@ -1,5 +1,5 @@
 from utils.text_process import clean_text
-from utils.tools import save_to_dir
+from utils.tools import save_to_dir, save_to_json
 from core.summary import summarizer
 import os
 
@@ -21,17 +21,23 @@ def load_transcript_from_file() -> str:
         raise
 
 
-def summarize():
+def summarize(purpose : str = "summarize"):
     transcript = load_transcript_from_file()
     if not transcript:
         raise ValueError("No transcript to summarize")
     
     try:
-        summary, title = summarizer(transcript)
+        summary, title = summarizer(transcript, purpose=purpose)
         
     except Exception as e:
         print(f"Failed to summarize transcript: {e}")
         raise
+    
+    if purpose == "notes":
+        save_to_json(summary, DIRECTORY="testing/notes")
+    else:
+        save_to_dir(summary, DIRECTORY="testing/summary")
+    
+    return summary, title
 
-    save_to_dir(summary, DIRECTORY = "testing/summary", filename = (title + ".txt"))
     
