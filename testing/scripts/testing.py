@@ -34,9 +34,9 @@ def summarize(purpose : str = "summarize"):
         raise
     
     if purpose == "notes":
-        save_to_json(summary, DIRECTORY="testing/notes")
+        save_to_json(summary, purpose=purpose)
     else:
-        save_to_dir(summary, DIRECTORY="testing/summary")
+        save_to_json(summary, purpose=purpose)
     
     return summary, title
 

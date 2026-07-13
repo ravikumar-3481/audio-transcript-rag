@@ -24,12 +24,12 @@ def remove_a_dir(DIRECTORY : str = None):
 
 
 
-def save_to_dir(transcript : str, DIRECTORY : str = "agent/memory/data", filename : str = "untitled.txt") -> str :
+def save_to_dir(data : str, DIRECTORY : str, filename : str = "untitled.txt") -> str :
     try:
         os.makedirs(DIRECTORY, exist_ok=True)
         transcript_path = os.path.join(DIRECTORY, filename)
         with open(transcript_path, "w", encoding="utf-8") as f:
-            f.write(transcript)
+            f.write(data)
         print(f"Transcript saved to {transcript_path}")
         return transcript_path
     except OSError as e:
@@ -64,7 +64,7 @@ def parse_concatenated_json(raw : str) -> list:
     return records
 
 
-def merge_notes_records(records : list) -> dict:
+def merge_notes_records_notes(records : list) -> dict:
     quick_summaries = []
     detailed_explanations = []
     key_definitions = []
@@ -97,11 +97,47 @@ def merge_notes_records(records : list) -> dict:
         "notes": notes,
     }
 
+def merge_notes_records_summary(records : list) -> dict:
+    short_summaries = []
+    detailed_summaries = []
+    remember_points = []
+    important_points = []
+    important_notes = []
 
-def save_to_json(summary : str, DIRECTORY : str = "agent/memory/data", filename : str = "untitled.json") -> str:
-    os.makedirs(DIRECTORY, exist_ok=True)
-    output_path = os.path.join(DIRECTORY, filename)
+    for record in records:
+        if not isinstance(record, dict):
+            continue
 
+        short_summary = record.get("short_summary", "")
+        if short_summary:
+            short_summaries.append(short_summary)
+
+        detailed_explanation = record.get("detailed_summary", "")
+        if detailed_explanation:
+            detailed_summaries.append(detailed_explanation)
+
+        chunk_remember_points = record.get("remember_points", [])
+        if isinstance(chunk_remember_points, list):
+            remember_points.extend(chunk_remember_points)
+
+        chunk_important_points = record.get("important_points", [])
+        if isinstance(chunk_important_points, list):
+            important_points.extend(chunk_important_points)
+
+        chunk_important_notes = record.get("important_notes", [])
+        if isinstance(chunk_important_notes, list):
+            important_notes.extend(chunk_important_notes)
+
+    return {
+        "short_summary": "\n ".join(short_summaries),
+        "detailed_summary": "\n ".join(detailed_summaries),
+        "remember_points": remember_points,
+        "important_points": important_points,
+        "important_notes": important_notes,
+    }
+
+
+def save_to_json(summary : str, DIRECTORY : str = "agent/memory/data", filename : str = "summary.json", purpose : str = "summarize") -> str:
 
     if not summary:
         raise ValueError("No transcript provided, nothing to summarize")
@@ -121,9 +157,15 @@ def save_to_json(summary : str, DIRECTORY : str = "agent/memory/data", filename 
         print(f"Failed to parse summary output as JSON: {e}")
         raise
 
-    merged = merge_notes_records(records)
+    if purpose == "notes":
+        merged = merge_notes_records_notes(records)
+        filename = "notes.json"
+    else:
+        merged = merge_notes_records_summary(records)
 
     try:
+        os.makedirs(DIRECTORY, exist_ok=True)
+        output_path = os.path.join(DIRECTORY, filename)
         os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(merged, f, ensure_ascii=False, indent=2)
@@ -132,4 +174,4 @@ def save_to_json(summary : str, DIRECTORY : str = "agent/memory/data", filename 
         raise
 
     print(f"Summary saved to {output_path}")
-    return output_path
+    return output_path 
