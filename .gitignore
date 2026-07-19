@@ -59,8 +59,6 @@ htmlcov/
 .ipynb_checkpoints/
 
 # Other 
-testing/transcripts/
-testing/summary/
-testing/notes/
-
-testt.py
+testing/
+trigger.py
+testing.py

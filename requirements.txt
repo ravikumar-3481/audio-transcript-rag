@@ -4,13 +4,7 @@ deepgram-sdk
 yt-dlp==2024.8.6
 pydub==0.25.1
 ffmpeg-python==0.2.0
-
-# ===== Transcription (Local Whisper) =====
-pydentic-core
-torch==2.4.1
-torchaudio==2.4.1
-
-# ===== Translation (Hindi -> English) =====
+pypdf==5.0.1
 deep-translator==1.11.4
 
 # ===== LangChain (LCEL) + Mistral =====

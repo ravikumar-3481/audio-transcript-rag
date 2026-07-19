@@ -1,12 +1,13 @@
 from deepgram import DeepgramClient
 from utils.audio_processor import process_audio
 from dotenv import load_dotenv
-from utils.tools import save_to_dir, remove_a_dir
+from utils.tools import FileSaver
 import requests
 import json
 import os
 
 load_dotenv()
+fs = FileSaver()
 
 SARVAM_API_KEY = os.getenv("SARVAM_API_KEY")
 SARVAM_STT_TRANSLATE_URL = "https://api.sarvam.ai/speech-to-text-translate"
@@ -135,7 +136,7 @@ def transcribe(source : str, language: str = "english"):
         raise 
 
     transcript = transcribe_all(chunks, language=language)
-    save_to_dir(transcript, DIRECTORY = "data/transcripts", filename = "transcript.txt")
-    remove_a_dir(DIRECTORY = "data/downloads")
+    fs.save_to_dir(transcript, DIRECTORY = "data/transcripts", filename = "transcript.txt")
+    fs.remove_a_dir(DIRECTORY = "data/downloads")
     return transcript
 
